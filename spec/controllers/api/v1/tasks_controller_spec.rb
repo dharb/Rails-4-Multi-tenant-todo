@@ -59,25 +59,60 @@ describe Api::V1::TasksController do
   end
 
   describe "GET #index" do
-    context "on proper subdomain" do
+    context "on proper subdomain, other users with private tasks" do
       before(:each) do
         @user = FactoryGirl.create :user
         @company = @user.company
         @user_2 = FactoryGirl.create :user, company: @company
-        @user_outside_domain = FactoryGirl.create :user
-        FactoryGirl.create :task, user: @user
-        FactoryGirl.create :task, user: @user, private: true
         FactoryGirl.create :task, user: @user_2
         FactoryGirl.create :task, user: @user_2, private: true
+        within_subdomain(@company.subdomain)
+        auth_header @user.auth_token
+        get :index
+      end
+
+      it "does not return other users' private tasks" do
+        tasks_response = json_response
+        expect(tasks_response[:tasks]).to have(1).items
+      end
+
+      it { should respond_with 200 }
+    end
+
+    context "on proper subdomain, with private task" do
+      before(:each) do
+        @user = FactoryGirl.create :user
+        @company = @user.company
+        FactoryGirl.create :task, user: @user
+        FactoryGirl.create :task, user: @user, private: true
+        within_subdomain(@company.subdomain)
+        auth_header @user.auth_token
+        get :index
+      end
+
+      it "returns own private tasks" do
+        tasks_response = json_response
+        expect(tasks_response[:tasks]).to have(2).items
+      end
+
+      it { should respond_with 200 }
+    end
+
+    context "on proper subdomain with outside company tasks" do
+      before(:each) do
+        @user = FactoryGirl.create :user
+        @user_outside_domain = FactoryGirl.create :user
+        @company = @user.company
+        2.times {FactoryGirl.create :task, user: @user}
         FactoryGirl.create :task, user: @user_outside_domain
         within_subdomain(@company.subdomain)
         auth_header @user.auth_token
         get :index
       end
 
-      it "returns own private tasks, company public tasks, and no other company tasks" do
+      it "returns only tasks within own company" do
         tasks_response = json_response
-        expect(tasks_response[:tasks]).to have(3).items
+        expect(tasks_response[:tasks]).to have(2).items
       end
 
       it { should respond_with 200 }
