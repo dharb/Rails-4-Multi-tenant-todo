@@ -2,20 +2,41 @@ describe Api::V1::TasksController do
   describe "GET #show" do
     context "on proper subdomain" do
       before(:each) do
-        user = FactoryGirl.create :user
-        @company = user.company
-        @task = FactoryGirl.create :task, user: user
+        @user = FactoryGirl.create :user
+        @company = @user.company
+        @task = FactoryGirl.create :task, user: @user
         within_subdomain(@company.subdomain)
-        auth_header user.auth_token
+        auth_header @user.auth_token
         get :show, { company_id: @company.id, id: @task.id }
       end
 
       it "renders correct title" do
+        auth_header @user.auth_token
+        get :show, { company_id: @company.id, id: @task.id }
         task_response = json_response
         expect(task_response[:title]).to eql @task.title
       end
 
       it { should respond_with 200 }
+    end
+
+    context "on proper subdomain, incorrect user" do
+      before(:each) do
+        @user = FactoryGirl.create :user
+        @company = @user.company
+        @user_2 = FactoryGirl.create :user, company: @company
+        @private_task = FactoryGirl.create :task, user: @user, private: true
+        within_subdomain(@company.subdomain)
+        auth_header @user_2.auth_token
+        get :show, { company_id: @company.id, id: @private_task.id }
+      end
+
+      it "doesn't display private task to other users" do
+        task_response = json_response
+        expect(task_response).to have_key(:errors)
+      end
+
+      it { should respond_with 401 }
     end
 
     context "on incorrect subdomain" do

@@ -15,7 +15,12 @@ class Api::V1::TasksController < ApplicationController
   end
 
   def show
-    render json: current_company.tasks.find(params[:id])
+    task = current_company.tasks.find(params[:id])
+    if !task.private || task.user_id == current_user.id
+      render json: task
+    else
+      render json: { errors: "Not authenticated" }, status: :unauthorized
+    end
   end
 
   def update
