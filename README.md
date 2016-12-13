@@ -1,6 +1,10 @@
 # Rails 4 Multi-tenant Todo App
 
-This is a basic multi-tenant RoR todo application. Application data is separated into different companies. Requests are routed by subdomains. Users can have private and public tasks--a user can see their own private tasks and all public tasks by users in their company. This API is set up to use token header authentication for users. When a user is created, they are assigned a unique token. Upon that user's session being destroyed, their token is erased. A new token is generated for them when they sign in again.
+This is a basic multi-tenant RoR todo application. Application data is separated into different tenants (companies). Users can have private and public tasks--a user can see their own private tasks and all public tasks by users from their own company. This API is set up to use token header authentication for users. When a user is created, they are assigned a unique token. Upon that user's session being destroyed, their token is erased. A new token is generated for them when they sign in again.
+
+### (Sub-)Domain-based request routing
+
+Requests are routed by subdomains in a multi-use way, such that this application may either be hosted on a tenant's domain (ourname.tenantname.com), or on our own domain (tenantname.ourname.com). Each company has a :subdomain field that cannot be blank. This works by hardcoding our own domain name in the #subdomain method in /app/controllers/concerns/auth.rb. We do this for flexibility and to give users a perception of fully isolated tenancy.
 
 I wrote this as a code sample for TDD JSON API development.
 
@@ -31,3 +35,5 @@ curl -H "Accept: application/json" -H "Content-type: application/json" -H 'Accep
 
 # where :auth_token is a user's authentication token, subdomain is the subdomain of that user's company, and :id is that user's id.
 ```
+
+Note: I use http://lvh.me:3000 instead of localhost:3000 as it allows for local subdomain testing.

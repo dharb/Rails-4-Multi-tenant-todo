@@ -21,11 +21,11 @@ module Auth
   end
 
   def subdomain
-    # here we parse domain and check if it is ourcompany.theirs.com or vice versa
+    # here we parse domain and check if it is ourcompany.theirs.com or theircompany.ours.com
     # I use a gem due to funkiness around TLDs of various lengths
-    # domain is currently hardcoded for our production app to have name 'hello-world', and local to use lvh.me
+    # domain is currently hardcoded for our production app to have name 'change-me', and local to use lvh.me
     host = PublicSuffix.parse(request.host)
-    if host.sld == "hello-world" || host.sld == "lvh"
+    if host.sld == "change-me" || host.sld == "lvh"
       @subdomain = host.trd
     else
       @subdomain = host.sld
